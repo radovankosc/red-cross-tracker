@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.RideLog" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#B71C1C</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+    </style>
+    <color name="ic_bg">#C62828</color>
+</resources>

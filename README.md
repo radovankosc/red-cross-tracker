@@ -1,11 +1,11 @@
-# Ride Log
+# Kniha jázd (Ride Log)
 
-A simple Android app for a volunteer driver to log rides, issue numbered receipts and e-mail period reports.
+A simple Android app (in Slovak) for a volunteer driver to log rides, issue numbered receipts and e-mail period reports.
 
 ## What it does
 
 - **Log a ride.** Search a customer by name (accents don't matter) or type a new name to create one. Home address and the last destination fill in automatically. Pick one way or return; the distance comes from Google Maps (shortest car route) or can be typed in.
-- **Receipts.** Every ride gets the next receipt number of its year (`1/2026`, `2/2026`, …, restarting each January). Price = starting fee + km × rate, both set in Settings (default 1.00 € + 0.40 €/km). The receipt can be shared or printed as a PDF.
+- **Receipts.** Every ride gets the next receipt number of its year (`1/2026`, `2/2026`, …, restarting each January). Price = starting fee + km × rate, both set in Settings (default 1.00 € + 0.40 €/km). The PDF receipt shows date, name, start, finish, distance and price, and can be shared or printed.
 - **Reports.** Pick a period (this month, last month, …) and e-mail a PDF listing the receipts with totals.
 - **Backup.** Settings → Save backup file writes everything to one JSON file that can be restored on another phone.
 
