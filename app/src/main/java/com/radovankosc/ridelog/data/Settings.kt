@@ -13,7 +13,12 @@ data class AppSettings(
     val mapsApiKey: String = "",
     /** Two-letter country code that address suggestions are limited to; blank means anywhere. */
     val regionCode: String = "sk",
-)
+    /** The receipt number the first ride of [numberingYear] should get, when not starting at 1. */
+    val numberingYear: Int = 0,
+    val numberingStart: Int = 1,
+) {
+    fun minNumber(year: Int): Int = if (year == numberingYear) numberingStart else 1
+}
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -30,6 +35,8 @@ class SettingsStore(context: Context) {
             reportEmail = prefs.getString("reportEmail", d.reportEmail)!!,
             mapsApiKey = prefs.getString("mapsApiKey", d.mapsApiKey)!!,
             regionCode = prefs.getString("regionCode", d.regionCode)!!,
+            numberingYear = prefs.getInt("numberingYear", d.numberingYear),
+            numberingStart = prefs.getInt("numberingStart", d.numberingStart),
         )
     }
 
@@ -42,6 +49,8 @@ class SettingsStore(context: Context) {
             .putString("reportEmail", s.reportEmail)
             .putString("mapsApiKey", s.mapsApiKey)
             .putString("regionCode", s.regionCode)
+            .putInt("numberingYear", s.numberingYear)
+            .putInt("numberingStart", s.numberingStart)
             .apply()
         _state.value = s
     }

@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -176,6 +177,12 @@ fun SettingsScreen(nav: NavController) {
     var showKey by remember { mutableStateOf(false) }
     var pendingRestore by remember { mutableStateOf<String?>(null) }
 
+    val year = LocalDate.now().year
+    var maxUsed by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { maxUsed = app.db.rides().maxNumber(year) ?: 0 }
+    val currentNext = maxOf(maxUsed + 1, settings.minNumber(year))
+    var nextNo by remember(currentNext) { mutableStateOf(currentNext.toString()) }
+
     fun loadFields(s: AppSettings) {
         rate = Fmt.plain(s.ratePerKm)
         fee = Fmt.plain(s.startFee)
@@ -239,6 +246,21 @@ fun SettingsScreen(nav: NavController) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
+            SectionTitle("Číslovanie dokladov")
+            OutlinedTextField(
+                nextNo, { nextNo = it.filter(Char::isDigit) },
+                label = { Text("Číslo ďalšieho dokladu v roku $year") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                "Ak ste tento rok už vydali doklady na papieri, zadajte číslo, ktorým má aplikácia pokračovať. " +
+                    "Od 1. januára sa číslovanie začne znova od 1.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
             SectionTitle("Hlavička prehľadu")
             OutlinedTextField(driver, { driver = it }, label = { Text("Meno vodiča") }, singleLine = true, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(org, { org = it }, label = { Text("Organizácia") }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -274,6 +296,19 @@ fun SettingsScreen(nav: NavController) {
                         Toast.makeText(context, "Skontrolujte čísla v cene", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
+                    val n = nextNo.toIntOrNull()
+                    if (n == null || n < 1) {
+                        Toast.makeText(context, "Zadajte číslo ďalšieho dokladu", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    if (n <= maxUsed) {
+                        Toast.makeText(
+                            context,
+                            "Doklad č. $maxUsed/$year už existuje. Ďalšie číslo musí byť aspoň ${maxUsed + 1}.",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        return@Button
+                    }
                     app.settings.save(
                         AppSettings(
                             ratePerKm = r,
@@ -283,6 +318,8 @@ fun SettingsScreen(nav: NavController) {
                             reportEmail = email.trim(),
                             mapsApiKey = key.trim(),
                             regionCode = region.trim().lowercase(),
+                            numberingYear = year,
+                            numberingStart = n,
                         ),
                     )
                     Toast.makeText(context, "Nastavenia uložené", Toast.LENGTH_SHORT).show()
@@ -322,6 +359,7 @@ fun SettingsScreen(nav: NavController) {
                             val restored = Backup.restore(app.db, text)
                             app.settings.save(restored)
                             loadFields(restored)
+                            maxUsed = app.db.rides().maxNumber(year) ?: 0
                             Toast.makeText(context, "Záloha obnovená", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
                             Toast.makeText(context, "Obnovenie zlyhalo: ${e.message}", Toast.LENGTH_LONG).show()

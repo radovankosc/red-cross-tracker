@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
@@ -133,7 +134,7 @@ fun RideCard(row: RideRow, onClick: () -> Unit) {
 }
 
 @Composable
-fun NewRideScreen(nav: NavController) {
+fun NewRideScreen(nav: NavController, editId: Long = 0L) {
     val context = LocalContext.current
     val app = context.app
     val scope = rememberCoroutineScope()
@@ -153,8 +154,29 @@ fun NewRideScreen(nav: NavController) {
     var calculatedFor by remember { mutableStateOf<Pair<String, String>?>(null) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    // The saved ride being edited; null when logging a new one.
+    var original by remember { mutableStateOf<Ride?>(null) }
+    var loaded by remember { mutableStateOf(editId == 0L) }
+
+    LaunchedEffect(editId) {
+        if (loaded) return@LaunchedEffect
+        val r = app.db.rides().get(editId) ?: return@LaunchedEffect
+        original = r
+        customerId = r.customerId
+        query = app.db.customers().get(r.customerId)?.name.orEmpty()
+        date = LocalDate.ofEpochDay(r.dateEpochDay)
+        from = r.fromAddress
+        to = r.toAddress
+        roundTrip = r.roundTrip
+        kmText = Fmt.plain(r.oneWayKm)
+        calculatedFor = r.fromAddress to r.toAddress
+        loaded = true
+    }
 
     val customer = customers.firstOrNull { it.id == customerId }
+    // An edited receipt keeps the rate it was made with.
+    val ratePerKm = original?.ratePerKm ?: settings.ratePerKm
+    val startFee = original?.startFee ?: settings.startFee
 
     suspend fun calculateKm() {
         val f = from.trim()
@@ -200,7 +222,7 @@ fun NewRideScreen(nav: NavController) {
 
     val oneWayKm = Fmt.parse(kmText)
     val totalKm = oneWayKm?.let { Pricing.totalKm(it, roundTrip) }
-    val price = totalKm?.let { Pricing.price(it, settings.ratePerKm, settings.startFee) }
+    val price = totalKm?.let { Pricing.price(it, ratePerKm, startFee) }
 
     fun save() {
         val name = query.trim()
@@ -208,16 +230,33 @@ fun NewRideScreen(nav: NavController) {
             name.isEmpty() -> "Zadajte meno zákazníka."
             from.isBlank() || to.isBlank() -> "Zadajte obe adresy."
             oneWayKm == null || oneWayKm <= 0 -> "Zadajte vzdialenosť v km."
+            original != null && date.year != original!!.receiptYear ->
+                "Dátum musí zostať v roku ${original!!.receiptYear}, aby sedelo číslovanie dokladov."
             else -> null
         }
         if (error != null || oneWayKm == null || totalKm == null || price == null) return
         saving = true
+        val editing = original
         scope.launch {
             try {
                 val saved = app.db.withTransaction {
                     val existing = customer ?: customers.firstOrNull { searchKey(it.name) == searchKey(name) }
                     val c = existing ?: Customer(name = name, homeAddress = from.trim()).let {
                         it.copy(id = app.db.customers().insert(it))
+                    }
+                    if (editing != null) {
+                        val updated = editing.copy(
+                            customerId = c.id,
+                            dateEpochDay = date.toEpochDay(),
+                            fromAddress = from.trim(),
+                            toAddress = to.trim(),
+                            roundTrip = roundTrip,
+                            oneWayKm = oneWayKm,
+                            totalKm = totalKm,
+                            price = price,
+                        )
+                        app.db.rides().update(updated)
+                        return@withTransaction updated
                     }
                     app.db.customers().update(
                         c.copy(lastDestination = to.trim(), homeAddress = c.homeAddress.ifBlank { from.trim() }),
@@ -237,10 +276,16 @@ fun NewRideScreen(nav: NavController) {
                             receiptYear = date.year,
                             receiptNumber = 0,
                         ),
+                        minNumber = settings.minNumber(date.year),
                     )
                 }
-                Toast.makeText(context, "Uložené ako doklad č. ${Fmt.receiptNo(saved)}", Toast.LENGTH_SHORT).show()
-                nav.navigate("ride/${saved.id}") { popUpTo("newride") { inclusive = true } }
+                if (editing != null) {
+                    Toast.makeText(context, "Doklad č. ${Fmt.receiptNo(saved)} upravený", Toast.LENGTH_SHORT).show()
+                    nav.popBackStack()
+                } else {
+                    Toast.makeText(context, "Uložené ako doklad č. ${Fmt.receiptNo(saved)}", Toast.LENGTH_SHORT).show()
+                    nav.navigate("ride/${saved.id}") { popUpTo("newride") { inclusive = true } }
+                }
             } catch (e: Exception) {
                 error = "Nepodarilo sa uložiť: ${e.message}"
                 saving = false
@@ -248,7 +293,9 @@ fun NewRideScreen(nav: NavController) {
         }
     }
 
-    DetailScaffold("Nová jazda", onBack = { nav.popBackStack() }) { padding ->
+    val title = original?.let { "Upraviť doklad č. ${Fmt.receiptNo(it)}" } ?: "Nová jazda"
+    DetailScaffold(title, onBack = { nav.popBackStack() }) { padding ->
+        if (!loaded) return@DetailScaffold
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -342,7 +389,7 @@ fun NewRideScreen(nav: NavController) {
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Text(
-                        "${Fmt.money(settings.startFee)} štartovné + ${Fmt.money(settings.ratePerKm)} za km",
+                        "${Fmt.money(startFee)} štartovné + ${Fmt.money(ratePerKm)} za km",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -359,7 +406,7 @@ fun NewRideScreen(nav: NavController) {
                 onClick = { save() },
                 enabled = !saving,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-            ) { Text("Uložiť jazdu a vytvoriť doklad") }
+            ) { Text(if (original != null) "Uložiť zmeny" else "Uložiť jazdu a vytvoriť doklad") }
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -384,6 +431,7 @@ fun RideDetailScreen(nav: NavController, id: Long) {
         title = current?.let { "Doklad č. ${Fmt.receiptNo(it.ride)}" } ?: "Jazda",
         onBack = { nav.popBackStack() },
         actions = {
+            IconButton(onClick = { nav.navigate("editride/$id") }) { Icon(Icons.Filled.Edit, "Upraviť doklad") }
             if (isLatest) {
                 IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, "Zmazať jazdu") }
             }

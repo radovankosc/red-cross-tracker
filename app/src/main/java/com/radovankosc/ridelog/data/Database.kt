@@ -121,6 +121,9 @@ abstract class RideDao {
     )
     abstract fun knownAddresses(): Flow<List<String>>
 
+    @Query("SELECT * FROM rides WHERE id = :id")
+    abstract suspend fun get(id: Long): Ride?
+
     @Query("SELECT MAX(receiptNumber) FROM rides WHERE receiptYear = :year")
     abstract suspend fun maxNumber(year: Int): Int?
 
@@ -133,16 +136,23 @@ abstract class RideDao {
     @Insert
     abstract suspend fun insertAll(rides: List<Ride>)
 
+    @Update
+    abstract suspend fun update(ride: Ride)
+
     @Delete
     abstract suspend fun delete(ride: Ride)
 
     @Query("DELETE FROM rides")
     abstract suspend fun deleteAll()
 
-    /** Saves the ride with the next receipt number of its year (1, 2, 3… restarting every January). */
+    /**
+     * Saves the ride with the next receipt number of its year (1, 2, 3… restarting every January),
+     * or [minNumber] if that is higher, for a driver who starts using the app mid-year.
+     */
     @Transaction
-    open suspend fun insertNumbered(ride: Ride): Ride {
-        val numbered = ride.copy(receiptNumber = (maxNumber(ride.receiptYear) ?: 0) + 1)
+    open suspend fun insertNumbered(ride: Ride, minNumber: Int): Ride {
+        val next = maxOf((maxNumber(ride.receiptYear) ?: 0) + 1, minNumber)
+        val numbered = ride.copy(receiptNumber = next)
         return numbered.copy(id = insert(numbered))
     }
 }

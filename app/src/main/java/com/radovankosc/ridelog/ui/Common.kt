@@ -96,6 +96,9 @@ fun AppNav() {
         composable("ride/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
             RideDetailScreen(nav, it.arguments!!.getLong("id"))
         }
+        composable("editride/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
+            NewRideScreen(nav, editId = it.arguments!!.getLong("id"))
+        }
         composable("customer/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) {
             CustomerEditScreen(nav, it.arguments!!.getLong("id"))
         }

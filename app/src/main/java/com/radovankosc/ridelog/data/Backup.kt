@@ -48,6 +48,8 @@ object Backup {
             .put("reportEmail", settings.reportEmail)
             .put("mapsApiKey", settings.mapsApiKey)
             .put("regionCode", settings.regionCode)
+            .put("numberingYear", settings.numberingYear)
+            .put("numberingStart", settings.numberingStart)
         return JSONObject()
             .put("app", "ridelog")
             .put("version", 1)
@@ -105,6 +107,8 @@ object Backup {
             reportEmail = s.optString("reportEmail", d.reportEmail),
             mapsApiKey = s.optString("mapsApiKey", d.mapsApiKey),
             regionCode = s.optString("regionCode", d.regionCode),
+            numberingYear = s.optInt("numberingYear", d.numberingYear),
+            numberingStart = s.optInt("numberingStart", d.numberingStart),
         )
         db.withTransaction {
             db.rides().deleteAll()
