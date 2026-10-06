@@ -56,10 +56,10 @@ fun CustomersScreen(nav: NavController) {
     var query by rememberSaveable { mutableStateOf("") }
 
     TabScaffold(
-        nav, "customers", "Customers",
+        nav, "customers", "Zákazníci",
         fab = {
             FloatingActionButton(onClick = { nav.navigate("customer/0") }) {
-                Icon(Icons.Filled.Add, "Add customer")
+                Icon(Icons.Filled.Add, "Pridať zákazníka")
             }
         },
     ) { padding ->
@@ -68,7 +68,7 @@ fun CustomersScreen(nav: NavController) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("Search by name") },
+                placeholder = { Text("Hľadať podľa mena") },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -76,7 +76,7 @@ fun CustomersScreen(nav: NavController) {
             val key = searchKey(query)
             val shown = if (key.isEmpty()) all else all.filter { searchKey(it.name).contains(key) }
             if (all.isEmpty()) {
-                EmptyMessage("No customers yet. They're added automatically when you log a ride.", PaddingValues())
+                EmptyMessage("Zatiaľ žiadni zákazníci. Pridajú sa sami pri zápise jazdy.", PaddingValues())
             }
             LazyColumn(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
@@ -130,11 +130,11 @@ fun CustomerEditScreen(nav: NavController, id: Long) {
     }
 
     DetailScaffold(
-        title = if (id == 0L) "New customer" else "Customer",
+        title = if (id == 0L) "Nový zákazník" else "Zákazník",
         onBack = { nav.popBackStack() },
         actions = {
             if (original != null && rideCount == 0) {
-                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, "Delete customer") }
+                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, "Zmazať zákazníka") }
             }
         },
     ) { padding ->
@@ -143,20 +143,20 @@ fun CustomerEditScreen(nav: NavController, id: Long) {
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(name, { name = it }, label = { Text("Meno") }, singleLine = true, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(
                 phone, { phone = it },
-                label = { Text("Phone") },
+                label = { Text("Telefón") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth(),
             )
-            AddressField("Home address", home, { home = it }, known)
-            AddressField("Usual destination", destination, { destination = it }, known)
-            OutlinedTextField(note, { note = it }, label = { Text("Note") }, minLines = 2, modifier = Modifier.fillMaxWidth())
+            AddressField("Adresa bydliska", home, { home = it }, known)
+            AddressField("Zvyčajný cieľ", destination, { destination = it }, known)
+            OutlinedTextField(note, { note = it }, label = { Text("Poznámka") }, minLines = 2, modifier = Modifier.fillMaxWidth())
             if (original != null) {
                 Text(
-                    "$rideCount ride(s) logged",
+                    "Počet jázd: $rideCount",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -164,7 +164,7 @@ fun CustomerEditScreen(nav: NavController, id: Long) {
             Button(
                 onClick = {
                     if (name.isBlank()) {
-                        Toast.makeText(context, "Enter a name", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Zadajte meno", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     scope.launch {
@@ -180,7 +180,7 @@ fun CustomerEditScreen(nav: NavController, id: Long) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-            ) { Text("Save customer") }
+            ) { Text("Uložiť zákazníka") }
         }
     }
 
@@ -188,7 +188,7 @@ fun CustomerEditScreen(nav: NavController, id: Long) {
     if (confirmDelete && toDelete != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete ${toDelete.name}?") },
+            title = { Text("Zmazať zákazníka ${toDelete.name}?") },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
@@ -196,9 +196,9 @@ fun CustomerEditScreen(nav: NavController, id: Long) {
                         app.db.customers().delete(toDelete)
                         nav.popBackStack()
                     }
-                }) { Text("Delete") }
+                }) { Text("Zmazať") }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Zrušiť") } },
         )
     }
 }

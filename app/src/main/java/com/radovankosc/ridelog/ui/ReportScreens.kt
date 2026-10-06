@@ -75,13 +75,13 @@ fun ReportsScreen(nav: NavController) {
         .collectAsState(initial = emptyList())
 
     val presets = listOf(
-        "This month" to (today.withDayOfMonth(1) to today),
-        "Last month" to today.minusMonths(1).withDayOfMonth(1).let { it to it.plusMonths(1).minusDays(1) },
-        "This year" to (today.withDayOfYear(1) to today),
-        "Last year" to today.minusYears(1).withDayOfYear(1).let { it to it.plusYears(1).minusDays(1) },
+        "Tento mesiac" to (today.withDayOfMonth(1) to today),
+        "Minulý mesiac" to today.minusMonths(1).withDayOfMonth(1).let { it to it.plusMonths(1).minusDays(1) },
+        "Tento rok" to (today.withDayOfYear(1) to today),
+        "Minulý rok" to today.minusYears(1).withDayOfYear(1).let { it to it.plusYears(1).minusDays(1) },
     )
 
-    TabScaffold(nav, "reports", "Reports") { padding ->
+    TabScaffold(nav, "reports", "Prehľady") { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -99,16 +99,16 @@ fun ReportsScreen(nav: NavController) {
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DateField("From", from, { from = it }, Modifier.weight(1f))
-                DateField("To", to, { to = it }, Modifier.weight(1f))
+                DateField("Od", from, { from = it }, Modifier.weight(1f))
+                DateField("Do", to, { to = it }, Modifier.weight(1f))
             }
 
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("${rows.size} receipt(s)", style = MaterialTheme.typography.titleMedium)
-                    Text("Total distance: ${Fmt.km(round1(rows.sumOf { it.ride.totalKm }))}")
+                    Text("Počet dokladov: ${rows.size}", style = MaterialTheme.typography.titleMedium)
+                    Text("Spolu km: ${Fmt.km(round1(rows.sumOf { it.ride.totalKm }))}")
                     Text(
-                        "Total: ${Fmt.money(round2(rows.sumOf { it.ride.price }))}",
+                        "Suma spolu: ${Fmt.money(round2(rows.sumOf { it.ride.price }))}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                     )
@@ -118,7 +118,7 @@ fun ReportsScreen(nav: NavController) {
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Send to e-mail") },
+                label = { Text("Poslať na e-mail") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
@@ -132,9 +132,9 @@ fun ReportsScreen(nav: NavController) {
                         val file = withContext(Dispatchers.IO) { PdfMaker.report(context, snapshot, from, to, settings) }
                         Share.file(
                             context, file, "application/pdf",
-                            subject = "Ride report ${Fmt.date(from)} – ${Fmt.date(to)}",
-                            text = "Ride report for ${Fmt.date(from)} – ${Fmt.date(to)}: ${snapshot.size} receipt(s), " +
-                                "total ${Fmt.money(round2(snapshot.sumOf { it.ride.price }))}.",
+                            subject = "Prehľad jázd ${Fmt.date(from)} – ${Fmt.date(to)}",
+                            text = "Prehľad jázd ${Fmt.date(from)} – ${Fmt.date(to)}: počet dokladov ${snapshot.size}, " +
+                                "suma spolu ${Fmt.money(round2(snapshot.sumOf { it.ride.price }))}.",
                             email = email,
                         )
                     }
@@ -143,7 +143,7 @@ fun ReportsScreen(nav: NavController) {
             ) {
                 Icon(Icons.Filled.Email, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("E-mail PDF report")
+                Text("Poslať prehľad e-mailom (PDF)")
             }
 
             rows.forEach { row ->
@@ -194,9 +194,9 @@ fun SettingsScreen(nav: NavController) {
                 withContext(Dispatchers.IO) {
                     context.contentResolver.openOutputStream(uri)!!.use { it.write(json.toByteArray()) }
                 }
-                Toast.makeText(context, "Backup saved", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Záloha uložená", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(context, "Backup failed: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Zálohovanie zlyhalo: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -211,57 +211,57 @@ fun SettingsScreen(nav: NavController) {
         }
     }
 
-    TabScaffold(nav, "settings", "Settings") { padding ->
+    TabScaffold(nav, "settings", "Nastavenia") { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SectionTitle("Price")
+            SectionTitle("Cena")
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     rate, { rate = it },
-                    label = { Text("€ per km") },
+                    label = { Text("€ za km") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.weight(1f),
                 )
                 OutlinedTextField(
                     fee, { fee = it },
-                    label = { Text("Starting fee €") },
+                    label = { Text("Štartovné €") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.weight(1f),
                 )
             }
             Text(
-                "Changes apply to new rides. Saved receipts keep the price they were made with.",
+                "Zmena platí pre nové jazdy. Uložené doklady si ponechajú pôvodnú cenu.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            SectionTitle("Printed on receipts")
-            OutlinedTextField(driver, { driver = it }, label = { Text("Driver's name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(org, { org = it }, label = { Text("Organisation") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            SectionTitle("Hlavička prehľadu")
+            OutlinedTextField(driver, { driver = it }, label = { Text("Meno vodiča") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(org, { org = it }, label = { Text("Organizácia") }, singleLine = true, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(
                 email, { email = it },
-                label = { Text("Default e-mail for reports") },
+                label = { Text("Predvolený e-mail pre prehľady") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            SectionTitle("Google Maps")
+            SectionTitle("Google Mapy")
             OutlinedTextField(
                 key, { key = it },
-                label = { Text("API key") },
+                label = { Text("API kľúč") },
                 singleLine = true,
                 visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = { TextButton(onClick = { showKey = !showKey }) { Text(if (showKey) "Hide" else "Show") } },
+                trailingIcon = { TextButton(onClick = { showKey = !showKey }) { Text(if (showKey) "Skryť" else "Zobraziť") } },
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 region, { region = it },
-                label = { Text("Country for address search (e.g. sk)") },
+                label = { Text("Krajina pre hľadanie adries (napr. sk)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -271,7 +271,7 @@ fun SettingsScreen(nav: NavController) {
                     val r = Fmt.parse(rate)
                     val f = Fmt.parse(fee)
                     if (r == null || f == null || r < 0 || f < 0) {
-                        Toast.makeText(context, "Check the price numbers", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Skontrolujte čísla v cene", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     app.settings.save(
@@ -285,25 +285,25 @@ fun SettingsScreen(nav: NavController) {
                             regionCode = region.trim().lowercase(),
                         ),
                     )
-                    Toast.makeText(context, "Settings saved", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Nastavenia uložené", Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-            ) { Text("Save settings") }
+            ) { Text("Uložiť nastavenia") }
 
-            SectionTitle("Backup")
+            SectionTitle("Záloha")
             Text(
-                "Save a backup file now and then (for example to Google Drive), so nothing is lost if the phone is.",
+                "Občas si uložte zálohu (napríklad na Google Disk), aby sa pri strate telefónu nič nestratilo.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             OutlinedButton(
-                onClick = { saveBackup.launch("ridelog-backup-${LocalDate.now()}.json") },
+                onClick = { saveBackup.launch("jazdy-zaloha-${LocalDate.now()}.json") },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Save backup file") }
+            ) { Text("Uložiť zálohu") }
             OutlinedButton(
                 onClick = { openBackup.launch(arrayOf("*/*")) },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Restore from backup file") }
+            ) { Text("Obnoviť zo zálohy") }
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -312,8 +312,8 @@ fun SettingsScreen(nav: NavController) {
     if (text != null) {
         AlertDialog(
             onDismissRequest = { pendingRestore = null },
-            title = { Text("Restore backup?") },
-            text = { Text("All customers, rides and settings on this phone are replaced by the ones in the backup file.") },
+            title = { Text("Obnoviť zálohu?") },
+            text = { Text("Všetci zákazníci, jazdy a nastavenia v tomto telefóne sa nahradia údajmi zo zálohy.") },
             confirmButton = {
                 TextButton(onClick = {
                     pendingRestore = null
@@ -322,14 +322,14 @@ fun SettingsScreen(nav: NavController) {
                             val restored = Backup.restore(app.db, text)
                             app.settings.save(restored)
                             loadFields(restored)
-                            Toast.makeText(context, "Backup restored", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Záloha obnovená", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
-                            Toast.makeText(context, "Restore failed: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "Obnovenie zlyhalo: ${e.message}", Toast.LENGTH_LONG).show()
                         }
                     }
-                }) { Text("Restore") }
+                }) { Text("Obnoviť") }
             },
-            dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("Zrušiť") } },
         )
     }
 }

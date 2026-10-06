@@ -60,7 +60,7 @@ object Backup {
     /** Replaces all data with the backup's. Returns the restored settings. */
     suspend fun restore(db: AppDatabase, text: String): AppSettings {
         val root = JSONObject(text)
-        require(root.optString("app") == "ridelog") { "This is not a Ride Log backup file" }
+        require(root.optString("app") == "ridelog") { "Toto nie je záložný súbor aplikácie Kniha jázd" }
         val customers = root.getJSONArray("customers").let { arr ->
             (0 until arr.length()).map { i ->
                 val o = arr.getJSONObject(i)

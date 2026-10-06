@@ -33,7 +33,7 @@ object GoogleMaps {
                 if (meters in 1 until shortest) shortest = meters
             }
         }
-        if (shortest == Int.MAX_VALUE) throw IOException("Google found no car route between these addresses")
+        if (shortest == Int.MAX_VALUE) throw IOException("Google nenašiel trasu autom medzi týmito adresami")
         round1(shortest / 1000.0)
     }
 
@@ -65,7 +65,7 @@ object GoogleMaps {
             val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
             if (code !in 200..299) {
                 val message = runCatching { JSONObject(text).getJSONObject("error").getString("message") }.getOrNull()
-                throw IOException(message ?: "Google returned error $code")
+                throw IOException(message ?: "Google vrátil chybu $code")
             }
             return if (text.isBlank()) JSONObject() else JSONObject(text)
         } finally {

@@ -82,18 +82,18 @@ fun RidesScreen(nav: NavController) {
     val app = LocalContext.current.app
     val rides by remember { app.db.rides().recent() }.collectAsState(initial = null)
     TabScaffold(
-        nav, "rides", "Rides",
+        nav, "rides", "Jazdy",
         fab = {
             ExtendedFloatingActionButton(
                 onClick = { nav.navigate("newride") },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New ride") },
+                text = { Text("Nová jazda") },
             )
         },
     ) { padding ->
         val list = rides ?: return@TabScaffold
         if (list.isEmpty()) {
-            EmptyMessage("No rides yet.\nTap “New ride” to log the first one.", padding)
+            EmptyMessage("Zatiaľ žiadne jazdy.\nŤuknite na „Nová jazda“ a zapíšte prvú.", padding)
         } else {
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
@@ -118,7 +118,7 @@ fun RideCard(row: RideRow, onClick: () -> Unit) {
                 Text(Fmt.money(r.price), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
             Text(
-                "No. ${Fmt.receiptNo(r)} · ${Fmt.date(r.dateEpochDay)} · ${Fmt.trip(r)} · ${Fmt.km(r.totalKm)}",
+                "Č. ${Fmt.receiptNo(r)} · ${Fmt.date(r.dateEpochDay)} · ${Fmt.trip(r)} · ${Fmt.km(r.totalKm)}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -166,11 +166,11 @@ fun NewRideScreen(nav: NavController) {
             val km = GoogleMaps.shortestDrivingKm(settings.mapsApiKey, f, t)
             kmText = Fmt.plain(km)
             calculatedFor = f to t
-            kmNote = "Shortest car route on Google Maps"
+            kmNote = "Najkratšia trasa autom podľa Google Máp"
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            kmNote = "Couldn't get the distance (${e.message}). You can type the km yourself."
+            kmNote = "Vzdialenosť sa nepodarilo zistiť (${e.message}). Km môžete zadať ručne."
         } finally {
             calculating = false
         }
@@ -205,9 +205,9 @@ fun NewRideScreen(nav: NavController) {
     fun save() {
         val name = query.trim()
         error = when {
-            name.isEmpty() -> "Enter the customer's name."
-            from.isBlank() || to.isBlank() -> "Enter both addresses."
-            oneWayKm == null || oneWayKm <= 0 -> "Enter the distance in km."
+            name.isEmpty() -> "Zadajte meno zákazníka."
+            from.isBlank() || to.isBlank() -> "Zadajte obe adresy."
+            oneWayKm == null || oneWayKm <= 0 -> "Zadajte vzdialenosť v km."
             else -> null
         }
         if (error != null || oneWayKm == null || totalKm == null || price == null) return
@@ -239,21 +239,21 @@ fun NewRideScreen(nav: NavController) {
                         ),
                     )
                 }
-                Toast.makeText(context, "Saved as receipt ${Fmt.receiptNo(saved)}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Uložené ako doklad č. ${Fmt.receiptNo(saved)}", Toast.LENGTH_SHORT).show()
                 nav.navigate("ride/${saved.id}") { popUpTo("newride") { inclusive = true } }
             } catch (e: Exception) {
-                error = "Couldn't save: ${e.message}"
+                error = "Nepodarilo sa uložiť: ${e.message}"
                 saving = false
             }
         }
     }
 
-    DetailScaffold("New ride", onBack = { nav.popBackStack() }) { padding ->
+    DetailScaffold("Nová jazda", onBack = { nav.popBackStack() }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SectionTitle("Customer")
+            SectionTitle("Zákazník")
             if (customer != null) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                     Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -264,14 +264,14 @@ fun NewRideScreen(nav: NavController) {
                         TextButton(onClick = {
                             customerId = 0L
                             query = ""
-                        }) { Text("Change") }
+                        }) { Text("Zmeniť") }
                     }
                 }
             } else {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { Text("Customer name") },
+                    label = { Text("Meno zákazníka") },
                     leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -284,7 +284,7 @@ fun NewRideScreen(nav: NavController) {
                     }
                     if (matches.none { searchKey(it.name) == key }) {
                         Text(
-                            "New customer “${query.trim()}” will be saved with this ride.",
+                            "Nový zákazník „${query.trim()}“ sa uloží spolu s jazdou.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -292,27 +292,27 @@ fun NewRideScreen(nav: NavController) {
                 }
             }
 
-            SectionTitle("Trip")
-            DateField("Date", date, { date = it }, Modifier.fillMaxWidth())
-            AddressField("From (pick-up)", from, { from = it }, known)
-            AddressField("To (destination)", to, { to = it }, known)
+            SectionTitle("Jazda")
+            DateField("Dátum", date, { date = it }, Modifier.fillMaxWidth())
+            AddressField("Odkiaľ (začiatok jazdy)", from, { from = it }, known)
+            AddressField("Kam (koniec jazdy)", to, { to = it }, known)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = !roundTrip,
                     onClick = { roundTrip = false },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                ) { Text("One way") }
+                ) { Text("Jednosmerne") }
                 SegmentedButton(
                     selected = roundTrip,
                     onClick = { roundTrip = true },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                ) { Text("Return") }
+                ) { Text("Tam a späť") }
             }
 
             OutlinedTextField(
                 value = kmText,
                 onValueChange = { kmText = it },
-                label = { Text("Distance one way (km)") },
+                label = { Text("Vzdialenosť jedným smerom (km)") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 trailingIcon = {
@@ -320,14 +320,14 @@ fun NewRideScreen(nav: NavController) {
                         CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                     } else if (settings.mapsApiKey.isNotBlank()) {
                         IconButton(onClick = { scope.launch { calculateKm() } }) {
-                            Icon(Icons.Filled.Refresh, "Calculate again")
+                            Icon(Icons.Filled.Refresh, "Vypočítať znova")
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
             val note = kmNote ?: if (settings.mapsApiKey.isBlank()) {
-                "Add a Google Maps key in Settings to fill in the km automatically."
+                "Pridajte kľúč Google Máp v Nastaveniach a km sa vyplnia samé."
             } else {
                 null
             }
@@ -338,16 +338,16 @@ fun NewRideScreen(nav: NavController) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "Total distance: ${totalKm?.let(Fmt::km) ?: "–"}",
+                        "Spolu: ${totalKm?.let(Fmt::km) ?: "–"}",
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Text(
-                        "${Fmt.money(settings.startFee)} + ${Fmt.money(settings.ratePerKm)} per km",
+                        "${Fmt.money(settings.startFee)} štartovné + ${Fmt.money(settings.ratePerKm)} za km",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        "Price: ${price?.let(Fmt::money) ?: "–"}",
+                        "Cena: ${price?.let(Fmt::money) ?: "–"}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                     )
@@ -359,7 +359,7 @@ fun NewRideScreen(nav: NavController) {
                 onClick = { save() },
                 enabled = !saving,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-            ) { Text("Save ride and create receipt") }
+            ) { Text("Uložiť jazdu a vytvoriť doklad") }
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -370,7 +370,6 @@ fun RideDetailScreen(nav: NavController, id: Long) {
     val context = LocalContext.current
     val app = context.app
     val scope = rememberCoroutineScope()
-    val settings by app.settings.state.collectAsState()
     val row by remember(id) { app.db.rides().observe(id) }.collectAsState(initial = null)
     var isLatest by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -382,11 +381,11 @@ fun RideDetailScreen(nav: NavController, id: Long) {
     }
 
     DetailScaffold(
-        title = current?.let { "Receipt ${Fmt.receiptNo(it.ride)}" } ?: "Ride",
+        title = current?.let { "Doklad č. ${Fmt.receiptNo(it.ride)}" } ?: "Jazda",
         onBack = { nav.popBackStack() },
         actions = {
             if (isLatest) {
-                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, "Delete ride") }
+                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, "Zmazať jazdu") }
             }
         },
     ) { padding ->
@@ -398,24 +397,23 @@ fun RideDetailScreen(nav: NavController, id: Long) {
         ) {
             Text(current.customerName, style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(8.dp))
-            InfoRow("Receipt no.", Fmt.receiptNo(r))
-            InfoRow("Date", Fmt.date(r.dateEpochDay))
-            InfoRow("From", r.fromAddress)
-            InfoRow("To", r.toAddress)
-            InfoRow("Trip", Fmt.trip(r))
-            InfoRow("Distance", Fmt.km(r.totalKm))
-            InfoRow("Rate", "${Fmt.money(r.startFee)} + ${Fmt.money(r.ratePerKm)}/km")
-            InfoRow("Price", Fmt.money(r.price))
+            InfoRow("Číslo dokladu", Fmt.receiptNo(r))
+            InfoRow("Dátum", Fmt.date(r.dateEpochDay))
+            InfoRow("Odkiaľ", r.fromAddress)
+            InfoRow("Kam", r.toAddress)
+            InfoRow("Jazda", Fmt.trip(r))
+            InfoRow("Vzdialenosť", Fmt.km(r.totalKm))
+            InfoRow("Sadzba", "${Fmt.money(r.startFee)} + ${Fmt.money(r.ratePerKm)}/km")
+            InfoRow("Cena", Fmt.money(r.price))
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = {
                     scope.launch {
-                        val customer = app.db.customers().get(r.customerId)
-                        val file = withContext(Dispatchers.IO) { PdfMaker.receipt(context, current, customer, settings) }
+                        val file = withContext(Dispatchers.IO) { PdfMaker.receipt(context, current) }
                         Share.file(
                             context, file, "application/pdf",
-                            subject = "Receipt ${Fmt.receiptNo(r)}",
-                            text = "Receipt ${Fmt.receiptNo(r)} – ${current.customerName}, ${Fmt.date(r.dateEpochDay)}",
+                            subject = "Doklad č. ${Fmt.receiptNo(r)}",
+                            text = "Doklad č. ${Fmt.receiptNo(r)} – ${current.customerName}, ${Fmt.date(r.dateEpochDay)}",
                         )
                     }
                 },
@@ -423,15 +421,15 @@ fun RideDetailScreen(nav: NavController, id: Long) {
             ) {
                 Icon(Icons.Filled.Share, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Share or print receipt (PDF)")
+                Text("Zdieľať alebo vytlačiť doklad (PDF)")
             }
             OutlinedButton(
                 onClick = { nav.navigate("customer/${r.customerId}") },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Open customer") }
+            ) { Text("Otvoriť zákazníka") }
             if (!isLatest) {
                 Text(
-                    "Only the newest receipt of a year can be deleted, so the numbering has no gaps.",
+                    "Zmazať sa dá len posledný doklad v roku, aby v číslovaní neboli medzery.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp),
@@ -443,8 +441,8 @@ fun RideDetailScreen(nav: NavController, id: Long) {
     if (confirmDelete && current != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete receipt ${Fmt.receiptNo(current.ride)}?") },
-            text = { Text("The ride is removed and the next ride gets this number again.") },
+            title = { Text("Zmazať doklad č. ${Fmt.receiptNo(current.ride)}?") },
+            text = { Text("Jazda sa odstráni a ďalšia jazda dostane opäť toto číslo.") },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
@@ -452,9 +450,9 @@ fun RideDetailScreen(nav: NavController, id: Long) {
                         app.db.rides().delete(current.ride)
                         nav.popBackStack()
                     }
-                }) { Text("Delete") }
+                }) { Text("Zmazať") }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Zrušiť") } },
         )
     }
 }

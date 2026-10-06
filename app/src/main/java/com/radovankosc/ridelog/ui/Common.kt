@@ -105,10 +105,10 @@ fun AppNav() {
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
-    Tab("rides", "Rides", Icons.Filled.Home),
-    Tab("customers", "Customers", Icons.Filled.Person),
-    Tab("reports", "Reports", Icons.Filled.DateRange),
-    Tab("settings", "Settings", Icons.Filled.Settings),
+    Tab("rides", "Jazdy", Icons.Filled.Home),
+    Tab("customers", "Zákazníci", Icons.Filled.Person),
+    Tab("reports", "Prehľady", Icons.Filled.DateRange),
+    Tab("settings", "Nastavenia", Icons.Filled.Settings),
 )
 
 private val barColors
@@ -168,7 +168,7 @@ fun DetailScaffold(
             TopAppBar(
                 title = { Text(title) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Späť") }
                 },
                 actions = { actions() },
                 colors = barColors,
@@ -266,7 +266,7 @@ fun AddressField(
                     IconButton(onClick = {
                         typing = true
                         onValueChange("")
-                    }) { Icon(Icons.Filled.Clear, "Clear") }
+                    }) { Icon(Icons.Filled.Clear, "Vymazať") }
                 }
             },
             modifier = Modifier.fillMaxWidth().onFocusChanged { if (!it.isFocused) typing = false },
@@ -309,7 +309,7 @@ fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, mod
                     open = false
                 }) { Text("OK") }
             },
-            dismissButton = { TextButton(onClick = { open = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { open = false }) { Text("Zrušiť") } },
         ) {
             DatePicker(state)
         }

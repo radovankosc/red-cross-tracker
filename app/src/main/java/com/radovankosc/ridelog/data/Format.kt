@@ -17,7 +17,7 @@ object Fmt {
     /** A number for an input field, without trailing ",0". */
     fun plain(v: Double): String = String.format(SK, "%.2f", v).trimEnd('0').trimEnd(',')
     fun receiptNo(r: Ride): String = "${r.receiptNumber}/${r.receiptYear}"
-    fun trip(r: Ride): String = if (r.roundTrip) "Return" else "One way"
+    fun trip(r: Ride): String = if (r.roundTrip) "Tam a späť" else "Jednosmerne"
 
     /** Accepts both "12,5" and "12.5". */
     fun parse(s: String): Double? = s.trim().replace(',', '.').toDoubleOrNull()

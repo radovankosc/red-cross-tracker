@@ -10,7 +10,6 @@ import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
 import com.radovankosc.ridelog.data.AppSettings
-import com.radovankosc.ridelog.data.Customer
 import com.radovankosc.ridelog.data.Fmt
 import com.radovankosc.ridelog.data.RideRow
 import com.radovankosc.ridelog.data.round1
@@ -127,33 +126,20 @@ private fun issuer(s: AppSettings): String =
 
 object PdfMaker {
 
-    fun receipt(context: Context, row: RideRow, customer: Customer?, s: AppSettings): File {
+    fun receipt(context: Context, row: RideRow): File {
         val r = row.ride
         val w = PdfWriter()
         w.newPage()
-        w.line("RECEIPT", size = 22f, bold = true)
-        w.line("No. ${Fmt.receiptNo(r)}", size = 16f, bold = true)
+        w.line("Doklad č. ${Fmt.receiptNo(r)}", size = 20f, bold = true)
         w.rule()
-        w.labelValue("Date", Fmt.date(r.dateEpochDay))
-        if (issuer(s).isNotBlank()) w.labelValue("Issued by", issuer(s))
-        w.labelValue("Customer", row.customerName)
-        if (customer != null && customer.homeAddress.isNotBlank()) w.labelValue("Customer address", customer.homeAddress)
+        w.labelValue("Dátum", Fmt.date(r.dateEpochDay))
+        w.labelValue("Meno", row.customerName)
+        w.labelValue("Začiatok jazdy", r.fromAddress)
+        w.labelValue("Koniec jazdy", r.toAddress)
+        w.labelValue("Vzdialenosť", if (r.roundTrip) "${Fmt.km(r.totalKm)} (tam a späť)" else Fmt.km(r.totalKm))
         w.rule()
-        w.labelValue("From", r.fromAddress)
-        w.labelValue("To", r.toAddress)
-        w.labelValue("Trip", Fmt.trip(r))
-        w.labelValue("Distance", if (r.roundTrip) "${Fmt.km(r.totalKm)} (2 × ${Fmt.km(r.oneWayKm)})" else Fmt.km(r.totalKm))
-        w.labelValue("Rate", "${Fmt.money(r.startFee)} starting fee + ${Fmt.money(r.ratePerKm)} per km")
-        w.rule()
-        w.line("Total: ${Fmt.money(r.price)}", size = 18f, bold = true)
-        w.space(70f)
-        val p = w.paint(10f, color = Color.DKGRAY)
-        w.canvas.drawLine(MARGIN, w.y, MARGIN + 200f, w.y, p)
-        w.canvas.drawLine(PAGE_W - MARGIN - 200f, w.y, PAGE_W - MARGIN, w.y, p)
-        w.space(14f)
-        w.canvas.drawText("Driver's signature", MARGIN, w.y, p)
-        w.canvas.drawText("Customer's signature", PAGE_W - MARGIN - 200f, w.y, p)
-        return w.writeTo(File(pdfDir(context), "receipt-${r.receiptYear}-${r.receiptNumber}.pdf"))
+        w.line("Cena: ${Fmt.money(r.price)}", size = 18f, bold = true)
+        return w.writeTo(File(pdfDir(context), "doklad-${r.receiptYear}-${r.receiptNumber}.pdf"))
     }
 
     fun report(context: Context, rows: List<RideRow>, from: LocalDate, to: LocalDate, s: AppSettings): File {
@@ -172,18 +158,18 @@ object PdfMaker {
 
         fun header() {
             w.y += 12f
-            w.canvas.drawText("No.", xNo, w.y, head)
-            w.canvas.drawText("Date", xDate, w.y, head)
-            w.canvas.drawText("Customer", xCustomer, w.y, head)
-            w.canvas.drawText("Trip", xTrip, w.y, head)
+            w.canvas.drawText("Č.", xNo, w.y, head)
+            w.canvas.drawText("Dátum", xDate, w.y, head)
+            w.canvas.drawText("Meno", xCustomer, w.y, head)
+            w.canvas.drawText("Jazda", xTrip, w.y, head)
             right("km", xKmRight, head)
-            right("Amount", xAmountRight, head)
+            right("Suma", xAmountRight, head)
             w.y += 5f
             w.canvas.drawLine(MARGIN, w.y, PAGE_W - MARGIN, w.y, w.paint(1f, color = Color.GRAY))
         }
 
         w.newPage()
-        w.line("Ride report", size = 20f, bold = true)
+        w.line("Prehľad jázd", size = 20f, bold = true)
         w.line("${Fmt.date(from)} – ${Fmt.date(to)}", size = 13f)
         if (issuer(s).isNotBlank()) w.line(issuer(s), size = 11f)
         w.space(10f)
@@ -206,10 +192,10 @@ object PdfMaker {
         w.rule()
         val totalKm = round1(rows.sumOf { it.ride.totalKm })
         val total = round2(rows.sumOf { it.ride.price })
-        w.labelValue("Receipts", rows.size.toString())
-        w.labelValue("Total distance", Fmt.km(totalKm))
-        w.labelValue("Total amount", Fmt.money(total))
-        return w.writeTo(File(pdfDir(context), "report-$from-$to.pdf"))
+        w.labelValue("Počet dokladov", rows.size.toString())
+        w.labelValue("Spolu km", Fmt.km(totalKm))
+        w.labelValue("Suma spolu", Fmt.money(total))
+        return w.writeTo(File(pdfDir(context), "prehlad-$from-$to.pdf"))
     }
 }
 
